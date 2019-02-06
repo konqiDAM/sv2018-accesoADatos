@@ -1,0 +1,34 @@
+Fichero en la ruta src/hibernate.cfg.xml
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.bytecode.use_reflection_optimizer">false</property>
+        <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
+        <property name="hibernate.connection.password">1234</property>
+        <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/peliculas</property>
+        <property name="hibernate.connection.username">postgres</property>
+        <property name="hibernate.default_catalog">pg_catalog</property>
+        <property name="hibernate.default_schema">public</property>
+        <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+        <property name="hibernate.search.autoregister_listeners">true</property>
+        <property name="hibernate.validator.apply_to_ddl">false</property>
+        <mapping resource="ReversePeliculasHibernate/Peliculas.hbm.xml"/>
+        <mapping resource="ReversePeliculasHibernate/Actores.hbm.xml"/>
+        <mapping resource="ReversePeliculasHibernate/Tematicas.hbm.xml"/>
+    </session-factory>
+</hibernate-configuration>
+
+
+Fichero en la ruta src/hibernate.reveng.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-reverse-engineering PUBLIC "-//Hibernate/Hibernate Reverse Engineering DTD 3.0//EN" "http://hibernate.org/dtd/hibernate-reverse-engineering-3.0.dtd" >
+
+<hibernate-reverse-engineering>
+	<table-filter match-name="actores" match-schema="public"></table-filter>
+	<table-filter match-name="peliculas" match-schema="public"></table-filter>
+	<table-filter match-name="repartos" match-schema="public"></table-filter>
+	<table-filter match-name="tematicas" match-schema="public"></table-filter>
+</hibernate-reverse-engineering>
