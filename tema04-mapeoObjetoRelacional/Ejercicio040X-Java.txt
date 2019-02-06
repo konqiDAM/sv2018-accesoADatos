@@ -1,0 +1,743 @@
+Fichero en la ruta src/Exercise0402.java
+
+
+public class Exercise0402 {
+	public static String menu() {
+		System.out.println("\tMENÚ");
+		System.out.println("1.-  AÑADIR TEMÁTICA.");
+		System.out.println("2.-  AÑADIR PELÍCULA.");
+		System.out.println("3.-  AÑADIR ACTOR.");
+		System.out.println("4.-  VER TEMÁTICAS.");
+		System.out.println("5.-  VER PELÍCULAS");
+		System.out.println("6.-  VER ACTORES");
+		System.out.println("7.-  MODIFICAR TEMÁTICA.");
+		System.out.println("8.-  MODIFICAR PELÍCULA.");
+		System.out.println("9.-  MODIFICAR ACTOR.");
+		System.out.println("10.- BORRAR TEMÁTICA.");
+		System.out.println("11.- BORRAR PELÍCULA.");
+		System.out.println("12.- BORRAR ACTOR");
+		System.out.println("13.- MOSTRAR REPARTO DE PELÍCULA.");
+		System.out.println("14.- MOSTRAR PELÍCULAS DE UN ACTOR.");
+		System.out.println("15.- BUSCAR PELÍCULA.");
+		System.out.println("16.- BUSCAR ACTOR.");
+		System.out.println("0.-  SALIR.");
+		return Utils.pedir("Opción:");
+	}
+	
+	public static void main(String[] args) {
+		@SuppressWarnings("unused")
+		org.jboss.logging.Logger logger =
+		        org.jboss.logging.Logger.getLogger("org.hibernate");
+		java.util.logging.Logger.getLogger("org.hibernate")
+		        .setLevel(java.util.logging.Level.SEVERE);
+
+		String opcion;
+		boolean salir = false;
+		do {
+			opcion = menu();
+
+			switch (opcion) {
+			case "1":
+				Negocio.anyadirTematica();
+				break;
+			case "2":
+				Negocio.anyadirPelicula();
+				break;
+			case "3":
+				Negocio.anyadirActor();
+				break;
+			case "4":
+				Negocio.mostrarTematicas();
+				break;
+			case "5":
+				Negocio.mostrarPeliculas();
+				break;
+			case "6":
+				Negocio.mostrarActores();
+				break;
+			case "7":
+				Negocio.modificarTematica();
+				break;
+			case "8":
+				Negocio.modificarPelicula();
+				break;
+			case "9":
+				Negocio.modificarActor();
+				break;
+			case "10":
+				Negocio.borrarTematica();
+				break;
+			case "11":
+				Negocio.borrarPelicula();
+				break;
+			case "12":
+				Negocio.borrarActor();
+				break;
+			case "13":
+				Negocio.mostrarRepartoPelicula();
+				break;
+			case "14":
+				Negocio.mostrarPeliculasActor();
+				break;
+			case "15":
+				Negocio.buscarPeliculasPorNombre();
+				break;
+			case "16":
+				Negocio.buscarActoresPorNombre();
+				break;
+				
+			case "0":
+				salir = true;
+				break;
+			}
+		} while (!salir);
+	}
+
+}
+
+
+
+
+
+Fichero en la ruta src/BD.java
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+
+import HibernateUtil.HibernateUtil;
+import ReversePeliculasHibernate.Actores;
+import ReversePeliculasHibernate.Peliculas;
+
+public class BD {
+	
+	public static int getNextId(String table) {
+		Session sesion = null;
+		int index = 0;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("select max(id) from " + table);
+			Object resultado = consulta.getSingleResult();
+
+			if (resultado != null)
+				index += (Integer) resultado;
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error obteniendo el id");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return index + 1;
+	}
+	
+	public static void borrar(String query) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta =
+			        sesion.createQuery(query);
+
+			List resultados = consulta.list();
+			
+			if(resultados.size() > 0) {
+				sesion.delete(resultados.get(0));
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+
+	public static void anyadir(String entidad, Object obj) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			sesion.save(entidad, obj);
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error añadiendo");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+	
+	public static List listar(String query) {
+
+		List resultados = null;
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery(query);
+			resultados = consulta.list();
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return resultados;
+	}
+	
+	public static List<Actores> obtenerReparto(String id) {
+
+		List<Actores> actores = new ArrayList<>();
+		Session sesion = null;
+		try {
+
+			sesion = HibernateUtil.getSessionFactory().openSession();
+
+			Query consulta = sesion
+			        .createQuery("from Peliculas where id = " + id);
+
+			List resultados = consulta.list();
+
+			
+			if (resultados.size() > 0) {
+				((Peliculas) resultados.get(0)).getActoreses().forEach(t -> {
+					actores.add((Actores)t);
+				});
+			}
+			
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando las películas");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+		
+		return actores;
+
+	}
+
+	public static List<Peliculas> obtenerPeliculasActor(String id) {
+		List<Peliculas> peliculas = new ArrayList<>();
+		Session sesion = null;
+		
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta =
+			        sesion.createQuery("from Actores where id = " + id);
+
+			List resultados = consulta.list();
+
+			if (resultados.size() > 0) {
+				((Actores) resultados.get(0)).getPeliculases().forEach(t -> {
+					peliculas.add((Peliculas) t);
+				});
+			}
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando las películas");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+		
+		return peliculas;
+
+	}
+
+	public static void modificar(String entidad, Object obj) {
+		Session sesion = null;
+		
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			
+			Transaction trans = sesion.beginTransaction();
+			
+			sesion.update(entidad,obj);
+			trans.commit();
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error modificando las películas");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+}
+
+
+
+
+
+
+Fichero en la ruta src/Negocio.java
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import ReversePeliculasHibernate.Actores;
+import ReversePeliculasHibernate.Peliculas;
+import ReversePeliculasHibernate.Tematicas;
+
+public class Negocio {
+
+	// TEMATICAS
+
+	private static Tematicas getDatosTematica() {
+		String nombre = Utils.pedir("Introduzca el título de la temática:");
+		return new Tematicas(BD.getNextId("Tematicas"), nombre, null);
+	}
+
+	public static void anyadirTematica() {
+		Tematicas tematica = getDatosTematica();
+		BD.anyadir("Tematicas", tematica);
+	}
+
+	private static Tematicas modificarValoresTematica(Tematicas original) {
+		String nombre = Utils.modificarValor("nombre", original.getNombre());
+
+		if (!nombre.equals(""))
+			original.setNombre(nombre);
+
+		return original;
+	}
+
+	public static void mostrarTematicas() {
+		List tematicas = BD.listar("from Tematicas order by id");
+
+		if (tematicas.size() != 0)
+			for (Object resultado : tematicas) {
+				Tematicas tematica = (Tematicas) resultado;
+				System.out.println(
+				        tematica.getId() + ": " + tematica.getNombre());
+			}
+		else
+			System.out.println("No hay temáticas registradas");
+
+	}
+
+	private static Tematicas seleccionarTematica() {
+		mostrarTematicas();
+
+		String id = Utils.pedir("ID:");
+
+		List resultados = BD.listar("from Tematicas where id =" + id);
+
+		Tematicas tematica = null;
+
+		if (resultados.size() == 1)
+			tematica = (Tematicas) resultados.get(0);
+
+		return tematica;
+	}
+
+	public static void borrarTematica() {
+		Tematicas tematica = seleccionarTematica();
+
+		BD.borrar("from Peliculas where tematica = " + tematica.getId());
+
+		BD.borrar("from Tematicas where id = " + tematica.getId());
+	}
+
+	public static void modificarTematica() {
+		Tematicas tematica = seleccionarTematica();
+
+		if (tematica != null) {
+			tematica = modificarValoresTematica(tematica);
+
+			BD.modificar("Tematicas", tematica);
+		}
+	}
+
+	// PELICULAS
+	private static String getStringPelicula(Peliculas pelicula) {
+		String s = pelicula.getId() + ": " + pelicula.getNombre() + " [ "
+		        + pelicula.getDuracion() + " min.] - puntuación: "
+		        + pelicula.getPuntuacion();
+
+		return s;
+	}
+
+	private static Peliculas seleccionarPelicula() {
+		mostrarPeliculas();
+
+		String id = Utils.pedir("ID:");
+
+		List resultados = BD.listar("from Peliculas where id =" + id);
+
+		Peliculas pelicula = null;
+
+		if (resultados.size() == 1)
+			pelicula = (Peliculas) resultados.get(0);
+
+		return pelicula;
+	}
+
+	public static Peliculas pedirDatosPelicula() {
+		String nombre;
+		int duracion, puntuacion;
+		Tematicas tematica;
+		Set actores = new HashSet<>();
+
+		do {
+			nombre = Utils.pedir("Introduzca el título de la película:");
+		} while (nombre.equals(""));
+
+		do {
+			duracion = Integer.parseInt(
+			        Utils.pedir("Introduzca la duración de la película:"));
+		} while (duracion <= 0);
+
+		do {
+			puntuacion = Integer.parseInt(
+			        Utils.pedir("Introduzca la puntuación de la película:"));
+		} while (puntuacion < 0 || puntuacion > 100);
+
+		tematica = seleccionarTematica();
+
+		return new Peliculas(BD.getNextId("Peliculas"), tematica, nombre,
+		        puntuacion, duracion, null);
+	}
+
+	public static void anyadirPelicula() {
+		Peliculas pelicula = pedirDatosPelicula();
+
+		BD.anyadir("Peliculas", pelicula);
+	}
+
+	public static void mostrarPeliculas() {
+		List peliculas = BD.listar("from Peliculas order by id");
+
+		if (peliculas.size() > 0) {
+			peliculas.forEach(t -> {
+				System.out.println(getStringPelicula((Peliculas) t));
+			});
+		} else
+			System.out.println("No hay películas");
+	}
+
+	public static void borrarPelicula() {
+		mostrarPeliculas();
+
+		String id = Utils.pedir("Id de la película:");
+
+		BD.borrar("from Peliculas where id = " + id);
+	}
+
+	public static void mostrarRepartoPelicula() {
+		mostrarPeliculas();
+		String id = Utils.pedir("ID:");
+
+		List<Actores> actores = BD.obtenerReparto(id);
+
+		if (actores.size() > 0)
+			for (Actores actor : actores) {
+				System.out.println(getStringActor(actor));
+			}
+		else
+			System.out.println("No hay actores");
+	}
+
+	public static void buscarPeliculasPorNombre() {
+
+		String nombre = Utils.pedir("Nombre a buscar:");
+
+		List peliculas = BD.listar("from Peliculas where nombre like '%"
+		        + nombre + "%' order by id");
+
+		if (peliculas.size() > 0)
+			for (Object resultado : peliculas) {
+				Peliculas pelicula = (Peliculas) resultado;
+				System.out.println(getStringPelicula(pelicula));
+			}
+		else
+			System.out.println("No hay peliculas");
+	}
+
+	private static Peliculas modificarValoresPelicula(Peliculas original,
+	        List<Actores> reparto) {
+		boolean modificada = false;
+		String nombre = Utils.modificarValor("nombre", original.getNombre());
+		String puntuacion = Utils.modificarValor("puntuación",
+		        original.getPuntuacion() + "");
+		String duracion =
+		        Utils.modificarValor("duración", original.getDuracion() + "");
+
+		if (!nombre.equals("")) {
+			original.setNombre(nombre);
+			modificada = true;
+		}
+
+		if (!puntuacion.equals("")) {
+			original.setPuntuacion(Integer.parseInt(puntuacion));
+			modificada = true;
+		}
+
+		if (!duracion.equals("")) {
+			original.setDuracion(Integer.parseInt(duracion));
+			modificada = true;
+		}
+
+		Tematicas newTematica;
+		String modTematica = Utils.pedir("¿Desea cambiar la temática?(y/n):");
+		if (modTematica.equalsIgnoreCase("y")) {
+			newTematica = seleccionarTematica();
+
+			original.setTematicas(newTematica);
+		}
+
+		Set actores = modificarReparto(reparto);
+
+		original.setActoreses(actores);
+
+		return original;
+	}
+
+	private static Set modificarReparto(List<Actores> reparto) {
+
+		List<Actores> actores = BD.listar("from Actores order by id");
+
+		boolean salir = false;
+		String opcion;
+		do {
+			opcion = Utils.pedir("1.- Añadir actor.\n" + "2.- Eliminar actor.\n"
+			        + "0.- Salir\nOpción:");
+
+			int id;
+			boolean encontrado;
+			switch (opcion) {
+			case "1":
+				imprimirActores(actores);
+				id = Integer.parseInt(Utils.pedir("ID:"));
+
+				encontrado = false;
+
+				for (int i = 0; i < actores.size() && !encontrado; i++) {
+					if (actores.get(i).getId() == id) {
+						if (!reparto.contains(actores.get(i)))
+							reparto.add(actores.get(i));
+						encontrado = true;
+					}
+				}
+				break;
+			case "2":
+				imprimirActores(reparto);
+
+				id = Integer.parseInt(Utils.pedir("ID:"));
+				encontrado = false;
+				for (int i = 0; i < actores.size() && !encontrado; i++) {
+					if (actores.get(i).getId() == id) {
+						reparto.remove(actores.get(i));
+						encontrado = true;
+					}
+				}
+
+				break;
+			case "0":
+				salir = true;
+				break;
+			}
+
+		} while (!salir);
+
+		return reparto.stream().collect(Collectors.toSet());
+	}
+
+	public static void modificarPelicula() {
+		Peliculas pelicula = seleccionarPelicula();
+
+		List<Actores> reparto = BD.obtenerReparto(pelicula.getId() + "");
+
+		pelicula = modificarValoresPelicula(pelicula, reparto);
+
+		BD.modificar("Peliculas", pelicula);
+	}
+
+	// ACTORES
+	private static String getStringActor(Actores actor) {
+		String s = actor.getId() + ": " + actor.getNombre() + " [Nacionalidad: "
+		        + (actor.getNacionalidad() == null ? "Sin nacionalidad"
+		                : actor.getNacionalidad())
+		        + " - Edad: " + actor.getEdad() + "] - teléfono: "
+		        + actor.getTelefono();
+
+		return s;
+	}
+
+	private static Actores seleccionarActorPorId(String id) {
+		List resultados = BD.listar("from Actores where id =" + id);
+
+		Actores actor = null;
+
+		if (resultados.size() == 1)
+			actor = (Actores) resultados.get(0);
+
+		return actor;
+	}
+
+	private static Actores seleccionarActor() {
+		mostrarActores();
+
+		String id = Utils.pedir("ID:");
+
+		Actores actor = seleccionarActorPorId(id);
+
+		return actor;
+	}
+
+	private static Actores modificarValoresActor(Actores original) {
+		String nombre = Utils.modificarValor("nombre", original.getNombre());
+		String nacionalidad = Utils.modificarValor("nacionalidad",
+		        original.getNacionalidad());
+		String edad = Utils.modificarValor("edad", original.getEdad() + "");
+		String telefono =
+		        Utils.modificarValor("teléfono", original.getTelefono());
+
+		if (!nombre.equals(""))
+			original.setNombre(nombre);
+
+		if (!nacionalidad.equals(""))
+			original.setNacionalidad(nacionalidad);
+
+		if (!edad.equals(""))
+			original.setEdad(Integer.parseInt(edad));
+
+		if (!telefono.equals(""))
+			original.setTelefono(telefono);
+
+		return original;
+	}
+
+	public static void modificarActor() {
+		Actores actor = seleccionarActor();
+
+		if (actor != null) {
+			actor = modificarValoresActor(actor);
+
+			BD.modificar("Actores", actor);
+		}
+	}
+
+	private static Actores getDatosActor() {
+
+		String nombre, nacionalidad, telefono;
+		int edad;
+
+		do {
+			nombre = Utils.pedir("Introduzca el nombre del actor:");
+		} while (nombre.equals(""));
+
+		do {
+			nacionalidad = Utils.pedir("Introduzca la nacionalidad del actor:");
+		} while (nacionalidad.equals(""));
+
+		do {
+			edad = Integer.parseInt(Utils.pedir("Introduzca la edad:"));
+		} while (edad <= 0 || edad > 100);
+
+		do {
+			telefono = Utils.pedir("Introduzca el telefono del actor:");
+		} while (telefono.equals(""));
+
+		return new Actores(BD.getNextId("Actores"), nombre, nacionalidad, edad,
+		        telefono, null);
+	}
+
+	public static void anyadirActor() {
+		Actores actor = getDatosActor();
+
+		BD.anyadir("Actores", actor);
+	}
+
+	public static void borrarActor() {
+		mostrarActores();
+
+		String id = Utils.pedir("ID:");
+
+		BD.borrar("from Actores where id = " + id);
+	}
+
+	public static void mostrarActores() {
+		List actores = BD.listar("from Actores order by id");
+
+		imprimirActores(actores);
+	}
+
+	private static void imprimirActores(List<Actores> actores) {
+		if (actores.size() > 0)
+			for (Object resultado : actores) {
+				Actores actor = (Actores) resultado;
+				System.out.println(getStringActor(actor));
+			}
+		else
+			System.out.println("No hay actores");
+	}
+
+	public static void buscarActoresPorNombre() {
+
+		String nombre = Utils.pedir("Nombre a buscar:");
+
+		List actores = BD.listar("from Actores where nombre like '%" + nombre
+		        + "%' order by id");
+
+		if (actores.size() > 0)
+			for (Object resultado : actores) {
+				Actores actor = (Actores) resultado;
+				System.out.println(getStringActor(actor));
+			}
+		else
+			System.out.println("No hay actores");
+	}
+
+	public static void mostrarPeliculasActor() {
+		mostrarActores();
+		String id = Utils.pedir("ID:");
+
+		List<Peliculas> peliculas = BD.obtenerPeliculasActor(id);
+
+		if (peliculas.size() > 0)
+			for (Peliculas pelicula : peliculas) {
+				System.out.println(getStringPelicula(pelicula));
+			}
+		else
+			System.out.println("No ha participado en ninguna película");
+
+	}
+
+}
+
+
+
+
+Fichero en la ruta src/Utils.java
+
+
+
+import java.util.Scanner;
+
+public class Utils {
+	private static Scanner scn = new Scanner(System.in);
+
+	public static String pedir(String mensaje) {
+		scn = new Scanner(System.in);
+		System.out.print(mensaje + " ");
+		return scn.nextLine();
+	}
+
+	public static String modificarValor(String campo, String valor) {
+		System.out.println("Valor actual " + campo + ": " + valor);
+
+		return pedir("Nuevo valor:");
+	}
+}
+
