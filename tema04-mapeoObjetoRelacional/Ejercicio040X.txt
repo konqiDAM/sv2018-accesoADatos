@@ -1,0 +1,39 @@
+drop table repartos cascade;
+drop table actores cascade;
+drop table peliculas cascade;
+drop table tematicas cascade;
+
+
+
+create table tematicas (
+	id integer check (id >= 0),
+	nombre varchar(255),
+	primary key (id)
+);
+
+create table peliculas(
+	id integer check (id >= 0),
+	nombre varchar(255) not null,
+	puntuacion integer check (puntuacion >= 0 and puntuacion <= 100),
+	duracion integer check (duracion > 0),
+	tematica integer,
+	primary key (id),
+	foreign key (tematica) references tematicas(id)
+);
+
+create table actores (
+	id integer check (id >= 1),
+	nombre varchar(255) not null,
+	nacionalidad varchar(255),
+	edad integer check (edad >= 1 and edad <= 100) not null,
+	telefono varchar(15) not null,
+	primary key(id)
+);
+
+create table repartos (
+	pelicula integer,
+	actor integer,
+	primary key (pelicula, actor),
+	foreign key (pelicula) references peliculas(id),
+	foreign key (actor) references actores(id)
+);
