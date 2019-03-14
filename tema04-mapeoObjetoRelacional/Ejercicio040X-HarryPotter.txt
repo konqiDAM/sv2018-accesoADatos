@@ -1,0 +1,47 @@
+drop table personajeXrol cascade;
+drop table roles cascade;
+drop table mascotas cascade;
+drop table personajes cascade;
+drop table casas cascade;
+
+create database harrypotter;
+
+create table casas(
+	id integer,
+	nombre varchar(255),
+	animal varchar(255),
+	fantasma varchar(255),
+	primary key(id)
+);
+
+create table personajes (
+	id integer,
+	nombre varchar(255),
+	casa integer,
+	varita varchar(255),
+	foreign key (casa) references casas(id),
+	primary key (id)
+);
+
+create table roles (
+	id integer,
+	tipo varchar(255),
+	primary key(id)
+);
+
+create table personajeXrol (
+	personaje integer,
+	rol integer,
+	primary key(personaje, rol),
+	foreign key (personaje) references personajes(id),
+	foreign key (rol) references roles(id)
+);
+
+
+create table mascotas (
+	id integer,
+	nombre varchar(255),
+	amo integer,
+	primary key(id),
+	foreign key (amo) references personajes(id)
+);
