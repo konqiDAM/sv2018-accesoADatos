@@ -1,0 +1,994 @@
+
+// Fichero en la ruta src/Exercise0404.java
+
+public class Exercise0404 {
+
+	private static String Menu() {
+		System.out.println("1.-  Añadir casa."); // HECHO
+		System.out.println("2.-  Añadir mascota.");// HECHO
+		System.out.println("3.-  Añadir personaje");// HECHO
+		System.out.println("4.-  Añadir rol");// HECHO
+
+		System.out.println("5.-  Borrar casa.");
+		System.out.println("6.-  Borrar mascota.");
+		System.out.println("7.-  Borrar personaje.");
+		System.out.println("8.-  Borrar rol.");
+
+		System.out.println("9.-  Editar casa.");
+		System.out.println("10.- Editar mascota.");
+		System.out.println("11.- Editar personaje.");
+		System.out.println("12.- Editar rol.");
+
+		System.out.println("13.- Mostrar casas.");
+		System.out.println("14.- Mostrar personajes.");
+		System.out.println("15.- Mostrar personajes por roles.");
+		System.out
+		        .println("16.- Mostrar mascotas con el nombre de sus dueños.");
+		System.out.println("17.- Mostrar personajes sin mascota.");
+		System.out.println("18.- Mostrar mascotas sin dueño.");
+
+		System.out.println("0.-  Salir.");
+
+		return Utils.pedir("Opcion:");
+	}
+
+	public static void main(String[] args) {
+		@SuppressWarnings("unused")
+		org.jboss.logging.Logger logger =
+		        org.jboss.logging.Logger.getLogger("org.hibernate");
+		java.util.logging.Logger.getLogger("org.hibernate")
+		        .setLevel(java.util.logging.Level.SEVERE);
+
+		boolean salir = false;
+		String opcion;
+
+		do {
+			opcion = Menu();
+			switch (opcion) {
+			case "1":
+				Negocio.anyadirCasa();
+				break;
+			case "2":
+				Negocio.anyadirMascota();
+				break;
+			case "3":
+				Negocio.anyadirPersonaje();
+				break;
+			case "4":
+				Negocio.anyadirRol();
+				break;
+			case "5":
+				Negocio.borrarCasa();
+				break;
+			case "6":
+				Negocio.borrarMascota();
+				break;
+			case "7":
+				Negocio.borrarPersonaje();
+				break;
+			case "8":
+				Negocio.borrarRol();
+				break;
+			case "9":
+				Negocio.modificarCasa();
+				break;
+			case "10":
+				Negocio.modificarMascota();
+				break;
+			case "11":
+				Negocio.modificarPersonaje();
+				break;
+			case "12":
+				Negocio.modificarRol();
+				break;
+			case "13":
+				Negocio.mostrarCasasYPersonajes();
+				break;
+			case "14":
+				Negocio.mostrarPersonajeRolCasa();
+				break;
+			case "15":
+				Negocio.mostrarRolPersonajes();
+				break;
+			case "16":
+				Negocio.mostrarMascotasHomonimasAmo();
+				break;
+			case "17":
+				Negocio.mostrarPersonajesSinMascota();
+				break;
+			case "18":
+				Negocio.mostrarMascotasSinAmo();
+				break;
+			case "0":
+				salir = true;
+				break;
+
+			}
+		} while (!salir);
+	}
+
+}
+
+// Fichero en la ruta src/BD.java
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.TreeSet;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+
+import HibernateUtil.HibernateUtil;
+import ReverseHarryPotterHibernate.Casas;
+import ReverseHarryPotterHibernate.Mascotas;
+import ReverseHarryPotterHibernate.Personajes;
+import ReverseHarryPotterHibernate.Roles;
+
+public class BD {
+	// MÉTODOS GENERALES
+	public static int getNextId(String entidad) {
+		Session sesion = null;
+		int index = 0;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta =
+			        sesion.createQuery("select max(id) from " + entidad);
+			Object resultado = consulta.getSingleResult();
+
+			if (resultado != null)
+				index += (Integer) resultado;
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error obteniendo el id");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return index + 1;
+	}
+
+	public static void borrar(String query) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta = sesion.createQuery(query);
+
+			List resultados = consulta.list();
+
+			for (Object obj : resultados) {
+				sesion.delete(obj);
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+
+	public static void anyadir(Object obj) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			sesion.save(obj);
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error añadiendo");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+
+	public static List listar(String query) {
+
+		List resultados = null;
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery(query);
+			resultados = consulta.list();
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return resultados;
+	}
+
+	public static void modificar(Object obj) {
+		Session sesion = null;
+
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+
+			Transaction trans = sesion.beginTransaction();
+
+			sesion.update(obj);
+			trans.commit();
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error modificando las películas");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+	// MÉTODOS LISTAR
+	public static List<Casas> listarCasas() {
+		return listar("from Casas order by id");
+	}
+
+	public static List<Personajes> listarPersonajes() {
+		return listar("from Personajes order by id");
+	}
+
+	public static List<Mascotas> listarMascotas() {
+		return listar("from Mascotas order by id");
+	}
+
+	public static List<Roles> listarRoles() {
+		return listar("from Roles order by id");
+	}
+
+	public static void borrarCasa(String id) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta = sesion.createQuery("from Casas where id = " + id);
+
+			List resultados = consulta.list();
+
+			if (resultados.size() > 0) {
+				Casas casa = (Casas) resultados.get(0);
+
+				if (casa.getPersonajeses() != null)
+					casa.getPersonajeses().stream().forEach(t -> {
+						((Personajes) t).setCasas(null);
+
+					});
+
+				casa.setPersonajeses(null);
+
+				sesion.update(casa);
+				sesion.delete(casa);
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+	public static void borrarMascota(String id) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta =
+			        sesion.createQuery("from Mascotas where id = " + id);
+
+			List resultados = consulta.list();
+
+			if (resultados.size() > 0) {
+				Mascotas mascota = (Mascotas) resultados.get(0);
+
+				if (mascota.getPersonajes() != null)
+					mascota.getPersonajes().getMascotases().remove(mascota);
+
+				mascota.setPersonajes(null);
+
+				sesion.update(mascota);
+				sesion.delete(mascota);
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+	public static void borrarPersonaje(String id) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta =
+			        sesion.createQuery("from Personajes where id = " + id);
+
+			List resultados = consulta.list();
+
+			if (resultados.size() > 0) {
+				Personajes personaje = (Personajes) resultados.get(0);
+
+				if (personaje.getMascotases() != null)
+					personaje.getMascotases().forEach(t -> {
+						((Mascotas) t).setPersonajes(null);
+					});
+
+				if (personaje.getRoleses() != null)
+					personaje.getRoleses().forEach(t -> {
+						((Roles) t).getPersonajeses().remove(personaje);
+					});
+
+				personaje.setCasas(null);
+
+				sesion.update(personaje);
+				sesion.delete(personaje);
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+	public static void borrarRol(String id) {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Transaction trans = sesion.beginTransaction();
+			Query consulta = sesion.createQuery("from Roles where id = " + id);
+
+			List resultados = consulta.list();
+
+			if (resultados.size() > 0) {
+				Roles rol = (Roles) resultados.get(0);
+
+				if (rol.getPersonajeses() != null)
+					rol.getPersonajeses().forEach(t -> {
+						((Personajes) t).getRoleses().remove(rol);
+					});
+
+				rol.setPersonajeses(null);
+				sesion.update(rol);
+				sesion.delete(rol);
+			}
+
+			trans.commit();
+		} catch (Exception e) {
+			System.out.println("Hubo un error borrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+	}
+
+	/*
+	 * public static HashMap<Casas, ArrayList<Personajes>> getPersonajesCasas()
+	 * { List resultados = null; Session sesion = null; try { sesion =
+	 * HibernateUtil.getSessionFactory().openSession(); String query = ""; Query
+	 * consulta = sesion.createQuery(query);
+	 * 
+	 * resultados = consulta.list();
+	 * 
+	 * if (resultados.size() > 0) { for (Object object : resultados) {
+	 * System.out.println(object); } }
+	 * 
+	 * } catch (Exception e) { System.out.println("Hubo un error mostrando"); }
+	 * finally { if (sesion != null) sesion.close(); } }
+	 */
+
+	public static void listarPersonajeRolCasa() {
+
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("from Personajes order by id");
+			List personajes = consulta.list();
+
+			for (Object r : personajes) {
+				Personajes p = (Personajes) r;
+
+				System.out.print(p.getId() + " " + p.getNombre() + " - ");
+
+				if (p.getCasas() != null)
+					System.out.println(p.getCasas().getNombre());
+				else
+					System.out.println("Sin casa");
+
+				if (p.getRoleses().size() > 0)
+					p.getRoleses().forEach(o -> {
+						Roles rol = (Roles) o;
+						System.out.println(rol.getTipo());
+					});
+				else
+					System.out.println("Sin roles");
+
+				System.out.println();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Hubo un error");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+
+	public static void listarRolesConPersonajes() {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("from Roles order by id");
+			List resultados = consulta.list();
+
+			for (Object r : resultados) {
+				Roles rol = (Roles) r;
+
+				System.out.println(Utils.toString(rol));
+
+				if (!rol.getPersonajeses().isEmpty()) {
+
+					rol.getPersonajeses().stream()
+					        .map(x -> ((Personajes) x).getNombre()).sorted()
+					        .forEach(System.out::println);
+				}
+				else
+					System.out.println("No existen personajes asociados");
+
+			}
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+	}
+
+	public static List<Mascotas> listarMascotasHomonimasAmo() {
+		List resultados = new ArrayList<>();
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("from Mascotas order by id");
+			List mascotas = consulta.list();
+
+			for (Object m : mascotas) {
+				Mascotas mascota = (Mascotas) m;
+				if (mascota.getPersonajes() != null)
+					if (mascota.getNombre().equalsIgnoreCase(
+					        mascota.getPersonajes().getNombre()))
+						resultados.add(m);
+
+			}
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return resultados;
+	}
+
+	public static List<Personajes> listarPersonajesSinMascota() {
+		List resultados = new ArrayList<>();
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("from Personajes order by id");
+			List personajes = consulta.list();
+
+			for (Object p : personajes) {
+				if (((Personajes) p).getMascotases().size() == 0) {
+					resultados.add(p);
+				}
+			}
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return resultados;
+	}
+
+	public static List<Mascotas> listarMascotasSinAmo() {
+		List resultados = null;
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion
+			        .createQuery("from Mascotas where amo is null order by id");
+			resultados = consulta.list();
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error mostrando");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+
+		return resultados;
+	}
+
+	
+	public static void listarCasasYPersonajes() {
+		Session sesion = null;
+		try {
+			sesion = HibernateUtil.getSessionFactory().openSession();
+			Query consulta = sesion.createQuery("from Casas order by id");
+			List resultados = consulta.list();
+
+			for (Object r : resultados) {
+				Casas casa = (Casas) r;
+
+				System.out.println(Utils.toString(casa));
+
+				if (!casa.getPersonajeses().isEmpty()) {
+
+					casa.getPersonajeses().stream()
+					        .map(x -> ((Personajes) x).getNombre()).sorted()
+					        .forEach(System.out::println);
+				}
+				else
+					System.out.println("No existen personajes asociados");
+
+			}
+
+		} catch (Exception e) {
+			System.out.println("Hubo un error");
+		} finally {
+			if (sesion != null)
+				sesion.close();
+		}
+		
+	}
+
+}
+
+
+
+
+// Fichero en la ruta src/Negocio.java
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import ReverseHarryPotterHibernate.*;
+
+public class Negocio {
+
+	private static Object seleccionar(String entidad, String id) {
+
+		List<Object> seleccionado =
+		        BD.listar("from " + entidad + " where id = " + id);
+
+		Object resultado = null;
+		if (seleccionado.size() > 0) {
+			resultado = seleccionado.get(0);
+		} else {
+			System.out.println("No se ha podido seleccionar ningún valor");
+		}
+
+		return resultado;
+	}
+
+	private static void mostrar(List resultados) {
+		if (resultados.size() != 0) {
+			String s = "";
+			for (Object resultado : resultados) {
+
+				switch (resultado.getClass().getSimpleName()) {
+				case "Casas":
+					s = Utils.toString((Casas) resultado);
+					break;
+				case "Mascotas":
+					s = Utils.toString((Mascotas) resultado);
+					break;
+				case "Personajes":
+					s = Utils.toString((Personajes) resultado);
+					break;
+				case "Roles":
+					s = Utils.toString((Roles) resultado);
+					break;
+				}
+				System.out.println(s);
+			}
+		} else
+			System.out.println("No hay datos registrados");
+	}
+
+	// CASAS
+	private static Casas getDatosCasa() {
+		String nombre = Utils.pedir("Nombre de la casa:");
+		String animal = Utils.pedir("Animal del emblema:");
+		String fantasma = Utils.pedir("Nombre del fantasma guardian:");
+
+		return new Casas(BD.getNextId("Casas"), nombre, animal, fantasma, null);
+	}
+
+	private static Casas modificarDatosCasa(Casas casa) {
+		String nombre = Utils.modificarValor("nombre", casa.getNombre());
+		String animal = Utils.modificarValor("animal", casa.getAnimal());
+		String fantasma = Utils.modificarValor("fantasma", casa.getFantasma());
+		casa.setNombre(nombre);
+		casa.setAnimal(animal);
+		casa.setFantasma(fantasma);
+		return casa;
+	}
+
+	public static void anyadirCasa() {
+		Casas casa = getDatosCasa();
+		BD.anyadir(casa);
+	}
+
+	public static void borrarCasa() {
+		List<Casas> casas = BD.listarCasas();
+		mostrar(casas);
+		String id = Utils.pedir("ID:");
+
+		BD.borrarCasa(id);
+	}
+
+	public static void modificarCasa() {
+		List<Casas> casas = BD.listarCasas();
+		mostrar(casas);
+		String id = Utils.pedir("Id:");
+		Casas casa = (Casas) seleccionar("Casas", id);
+		if (casa != null) {
+			casa = modificarDatosCasa(casa);
+			BD.modificar(casa);
+		}
+	}
+
+	// ROL
+	private static Roles getDatosRol() {
+		String tipo = Utils.pedir("Título del rol:");
+		return new Roles(BD.getNextId("Roles"), tipo, null);
+	}
+
+	private static Roles modificarDatosRol(Roles rol) {
+		String tipo = Utils.modificarValor("tipo", rol.getTipo());
+		rol.setTipo(tipo);
+		return rol;
+	}
+
+	public static void anyadirRol() {
+		Roles rol = getDatosRol();
+		BD.anyadir(rol);
+	}
+
+	public static void borrarRol() {
+		List<Roles> roles = BD.listarRoles();
+
+		mostrar(roles);
+
+		String id = Utils.pedir("ID:");
+
+		BD.borrarRol(id);
+	}
+
+	public static void modificarRol() {
+		List<Roles> roles = BD.listarRoles();
+		mostrar(roles);
+		String id = Utils.pedir("ID:");
+		Roles rol = (Roles) seleccionar("Roles", id);
+
+		if (rol != null) {
+			rol = modificarDatosRol(rol);
+			BD.modificar(rol);
+		}
+	}
+
+	// MASCOTAS
+	private static Mascotas getDatosMascota() {
+		List<Personajes> personajes = BD.listarPersonajes();
+		String nombre = Utils.pedir("Nombre de la mascota:");
+
+		Personajes amo = null;
+		if (personajes.size() > 0) {
+			mostrar(personajes);
+			String id = Utils.pedir("ID:");
+			amo = (Personajes) seleccionar("Personajes", id);
+		}
+
+		return new Mascotas(BD.getNextId("Mascotas"), amo, nombre);
+	}
+
+	private static Mascotas modificarDatosMascota(Mascotas mascota) {
+		String nombre = Utils.modificarValor("nombre", mascota.getNombre());
+
+		String cambiarAmo = Utils
+		        .pedir("¿Desea cambiar el propietario de la mascota?(y/n): ");
+
+		mascota.setNombre(nombre);
+
+		if (cambiarAmo.equalsIgnoreCase("y")) {
+			List<Personajes> personajes = BD.listarPersonajes();
+			mostrar(personajes);
+			String id = Utils.pedir("ID:");
+			Personajes amo = (Personajes) seleccionar("Personajes", id);
+			mascota.setPersonajes(amo);
+		}
+		return mascota;
+	}
+	
+	public static void anyadirMascota() {
+		Mascotas mascota = getDatosMascota();
+		BD.anyadir(mascota);
+	}
+
+	public static void borrarMascota() {
+		List<Mascotas> mascotas = BD.listarMascotas();
+		mostrar(mascotas);
+		String id = Utils.pedir("ID:");
+
+		BD.borrarMascota(id);
+	}
+
+	public static void modificarMascota() {
+		List<Mascotas> mascotas = BD.listarMascotas();
+		mostrar(mascotas);
+		String id = Utils.pedir("ID:");
+		Mascotas mascota = (Mascotas) seleccionar("Mascotas", id);
+
+		if (mascota != null) {
+			mascota = modificarDatosMascota(mascota);
+			BD.modificar(mascota);
+		}
+	}
+
+	// PERSONAJE
+
+	private static Personajes getDatosPersonajes() {
+		List<Roles> roles = BD.listarRoles();
+		List<Casas> casas = BD.listarCasas();
+
+		Personajes resultado = null;
+		if (roles.size() > 0) {
+			String nombre = Utils.pedir("Nombre del personaje:");
+			String varita = Utils.pedir("Varita:");
+
+			Casas casa = null;
+			if (casas.size() > 0) {
+				mostrar(casas);
+				String idCasa = Utils.pedir("ID:");
+				if (!idCasa.equals(""))
+					casa = (Casas) seleccionar("Casas", idCasa);
+			}
+
+			boolean salir = false;
+			HashSet<Roles> rolesPersonaje = new HashSet<>();
+			Roles rol = null;
+			do {
+				mostrar(roles);
+				System.out.println("PULSE INTRO PARA SALIR");
+				String idRol = Utils.pedir("ID:");
+				if (!idRol.equals("")) {
+					rol = (Roles) seleccionar("Roles", idRol);
+					if (rol != null)
+						rolesPersonaje.add(rol);
+				} else
+					salir = true;
+			} while (!salir);
+
+			resultado = new Personajes(BD.getNextId("Personajes"), casa, nombre,
+			        varita, null, rolesPersonaje);
+		} else
+			System.out.println("Introduzca roles previamente");
+
+		return resultado;
+	}
+
+	private static Personajes modificarDatosPersonajes(Personajes personaje) {
+		String nombre = Utils.modificarValor("nombre", personaje.getNombre());
+		String varita = Utils.modificarValor("varita", personaje.getVarita());
+
+		personaje.setNombre(nombre);
+		personaje.setVarita(varita);
+
+		String cambiarCasa = Utils.pedir("¿Desea cambiar la casa?(y/n):");
+
+		if (cambiarCasa.equalsIgnoreCase("y")) {
+			mostrar(BD.listarCasas());
+			String idCasa = Utils.pedir("ID:");
+			Casas casa = (Casas) seleccionar("Casas", idCasa);
+			personaje.setCasas(casa);
+		}
+
+		String cambiarMascotas =
+		        Utils.pedir("¿Desea cambiar las mascotas?(y/n):");
+
+		if (cambiarMascotas.equalsIgnoreCase("y")) {
+			List<Mascotas> mascotas = BD.listarMascotas();
+			List<Mascotas> masPersonaje =
+			        BD.listar("from Mascotas where amo =" + personaje.getId());
+
+			boolean salir = false;
+			do {
+				String opcion = Utils
+				        .pedir("1.- Añadir.\n2.- Eliminar\n0.-Salir\nOpcion:");
+				String idMascota;
+				Mascotas mascota;
+				switch (opcion) {
+				case "1":
+					mostrar(mascotas);
+					idMascota = Utils.pedir("ID:");
+					mascota = (Mascotas) seleccionar("Mascotas", idMascota);
+					masPersonaje.add(mascota);
+					break;
+				case "2":
+					mostrar(masPersonaje);
+					idMascota = Utils.pedir("ID:");
+					mascota = (Mascotas) seleccionar("Mascotas", idMascota);
+					masPersonaje.remove(mascota);
+					break;
+				case "0":
+					salir = true;
+					break;
+				}
+			} while (!salir);
+
+			personaje.setMascotases(
+			        masPersonaje.stream().collect(Collectors.toSet()));
+		}
+
+		String cambiarRoles = Utils.pedir("¿Desea cambiar los roles?(y/n):");
+		if (cambiarRoles.equalsIgnoreCase("y")) {
+			System.out.println(
+			        "Los roles se han resetado, añada los nuevos roles");
+
+			List<Roles> roles = BD.listarRoles();
+			boolean salir = false;
+			HashSet<Roles> rolesPersonaje = new HashSet<>();
+			Roles rol = null;
+			do {
+				mostrar(roles);
+				System.out.println("PULSE INTRO PARA SALIR");
+				String idRol = Utils.pedir("ID:");
+				if (!idRol.equals("")) {
+					rol = (Roles) seleccionar("Roles", idRol);
+					if (rol != null)
+						rolesPersonaje.add(rol);
+				} else
+					salir = true;
+			} while (!salir);
+
+			personaje.setRoleses(rolesPersonaje);
+		}
+
+		return personaje;
+	}
+
+	public static void anyadirPersonaje() {
+		Personajes personaje = getDatosPersonajes();
+		BD.anyadir(personaje);
+	}
+
+	public static void borrarPersonaje() {
+		List<Personajes> personajes = BD.listarPersonajes();
+		mostrar(personajes);
+		String id = Utils.pedir("ID:");
+
+		BD.borrarPersonaje(id);
+	}
+
+	public static void modificarPersonaje() {
+		mostrar(BD.listarPersonajes());
+		String id = Utils.pedir("ID:");
+		Personajes personaje = (Personajes) seleccionar("Personajes", id);
+
+		if (personaje != null) {
+			personaje = modificarDatosPersonajes(personaje);
+			BD.modificar(personaje);
+		}
+	}
+	
+	
+	
+	public static void mostrarCasasYPersonajes() {
+		BD.listarCasasYPersonajes();
+	}
+	public static void mostrarPersonajeRolCasa() {
+		BD.listarPersonajeRolCasa();
+		
+	}
+	
+	public static void mostrarRolPersonajes() {
+		BD.listarRolesConPersonajes();
+	}
+	
+	public static void mostrarMascotasHomonimasAmo() {
+		List<Mascotas> mascotas = BD.listarMascotasHomonimasAmo();
+
+		mostrar(mascotas);
+
+	}
+
+	public static void mostrarPersonajesSinMascota() {
+		List<Personajes> personajes = BD.listarPersonajesSinMascota();
+
+		mostrar(personajes);
+	}
+
+	public static void mostrarMascotasSinAmo() {
+		List<Mascotas> mascotas = BD.listarMascotasSinAmo();
+
+		mostrar(mascotas);
+	}
+
+}
+
+
+
+// Fichero en la ruta src/Utils.java
+
+import java.util.Scanner;
+
+import ReverseHarryPotterHibernate.Casas;
+import ReverseHarryPotterHibernate.Mascotas;
+import ReverseHarryPotterHibernate.Personajes;
+import ReverseHarryPotterHibernate.Roles;
+
+public class Utils {
+	private static Scanner scn = new Scanner(System.in);
+
+	public static String pedir(String mensaje) {
+		scn = new Scanner(System.in);
+		System.out.print(mensaje + " ");
+		return scn.nextLine();
+	}
+
+	public static String modificarValor(String campo, String valor) {
+		System.out.println("Valor actual " + campo + ": " + valor);
+
+		String nuevoValor = pedir("Nuevo valor:");
+
+		return (!nuevoValor.equals("")) ? nuevoValor : valor;
+	}
+
+	public static String toString(Casas casa) {
+		return casa.getId() + ": " + casa.getNombre() + " [" + casa.getAnimal()
+		        + ", " + casa.getFantasma() + "]";
+	}
+
+	public static String toString(Mascotas mascota) {
+		return mascota.getId() + ": " + mascota.getNombre();
+	}
+
+	public static String toString(Personajes personaje) {
+		return personaje.getId() + ": " + personaje.getNombre() + " ["
+		        + personaje.getVarita() + "]";
+	}
+
+	public static String toString(Roles rol) {
+		return rol.getId() + ": " + rol.getTipo();
+	}
+}
